@@ -74,3 +74,19 @@ chmod +x lecture-note.sh
 ## 许可证
 
 MIT
+
+---
+
+## 笔记知识补充
+
+`enrich-note.sh` 自动分析笔记中讲得浅/缺失的知识点，用 LLM 补充完整内容：
+
+```bash
+# 补充最新笔记
+./enrich-note.sh --auto
+
+# 补充指定笔记
+./enrich-note.sh "复变函数/2026-06-04_xxx.md"
+```
+
+补充的内容以「📖 知识补充」区块追加到笔记末尾，包含定义、要点和例子。
