@@ -89,7 +89,7 @@ fi
 
 # 第三步：生成笔记并输出到 Obsidian
 echo ""
-echo "📄 [3/3] 生成笔记 → Obsidian ..."
+echo "📄 [3/4] 生成笔记 → Obsidian ..."
 SUBJECT_DIR="$NOTES_DIR/$SUBJECT"
 mkdir -p "$SUBJECT_DIR"
 
@@ -144,8 +144,16 @@ else
   echo "| $SUBJECT | $COUNT | $DATE |" >> "$INDEX_FILE"
 fi
 
+# 第四步：自动补充知识点
 echo ""
-echo "✅ 完成！"
+echo "📖 [4/4] 自动补充知识点 ..."
+if [ -f "$NOTE_FILE" ]; then
+  bash "$SCRIPT_DIR/enrich-note.sh" "$NOTE_FILE" 2>&1 | grep -v "^$"
+fi
+
+echo ""
+echo "═══════════════════════════════════════"
+echo "  ✅ 全部完成！"
 echo "   学科: $SUBJECT"
 echo "   笔记: $NOTE_FILE"
 echo "   索引: $INDEX_FILE"
