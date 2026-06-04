@@ -56,31 +56,7 @@ if [ -z "$SUBJECT" ]; then
   echo "🔍 [2/3] 自动识别学科 ..."
   TRANSCRIPT_FILE=$(ls "$TRANSCRIPT_DIR"/*_transcript.txt 2>/dev/null | head -1)
   if [ -n "$TRANSCRIPT_FILE" ]; then
-    SUBJECT=$(python3 << 'PYEOF'
-import json, sys
-from openai import OpenAI
-from pathlib import Path
-
-config_path = Path.home() / ".noteking" / "config.json"
-config = json.loads(config_path.read_text())
-
-client = OpenAI(
-    api_key=config["llm"]["api_key"],
-    base_url=config["llm"]["base_url"]
-)
-
-transcript = Path(sys.argv[1]).read_text()[:3000]
-resp = client.chat.completions.create(
-    model=config["llm"]["model"],
-    messages=[{
-        "role": "user",
-        "content": f"以下是一段课堂录音的转录文本开头，请用2-4个字概括这是什么学科（如：复变函数、线性代数、英语、物理化学）。只回复学科名称，不要其他内容。\n\n{transcript}"
-    }],
-    temperature=0.1
-)
-print(resp.choices[0].message.content.strip())
-PYEOF
-" "$TRANSCRIPT_FILE")
+    SUBJECT=$(cd "$SCRIPT_DIR" && source venv/bin/activate && python3 detect_subject.py "$TRANSCRIPT_FILE")
     echo "  识别为: $SUBJECT"
   else
     SUBJECT="未分类"
