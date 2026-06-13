@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lecture-note"
+version = "0.1.0"
+description = "上课录音 → Whisper 转录 → LLM 整理 → Obsidian 结构化笔记"
+readme = "README.md"
+authors = [{name = "zack59309-maker"}]
+license = {text = "MIT"}
+requires-python = ">=3.9"
+keywords = ["speech-to-text", "whisper", "obsidian", "transcription"]
+dependencies = [
+    "openai-whisper",
+    "torch",
+    "pydub",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/zack59309-maker/lecture-note"
