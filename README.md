@@ -1,102 +1,131 @@
-# Lecture Note
+# Lecture Note — 课程录音自动整理
 
-上课录音 → Whisper 转录 → LLM 整理 → 自动补充知识点 → Obsidian 结构化笔记
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.9+-blue?style=flat-square" />
+  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" />
+  <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" />
+</p>
 
-将课堂录音自动转录、整理成结构化笔记，自动识别学科并补充老师没讲透的知识点，存入 Obsidian。
+上课录音一键转 Obsidian 结构化笔记。**录音 → Whisper 转录 → LLM 智能整理 → 结构化 Markdown**，自动按课程分类入 Obsidian 知识库。
 
-## 完整流程
+---
+
+## Pipeline
 
 ```
-手机录音 → 桌面\课程录音\ → lecture-note.sh
-                                    │
-                            [1/4] 转录（faster-whisper）
-                                    │
-                            [2/4] 自动识别学科（DeepSeek）
-                                    │
-                            [3/4] 结构化笔记 + 存到 Obsidian
-                                    │
-                            [4/4] 自动补充知识点（enrich-note）
-                                    │
-                                    ▼
-                            Obsidian 数学知识库/
-                              └── 课程笔记/
-                                  ├── 复变函数/
-                                  │   ├── 2026-06-04_xxx.md  ← 笔记 + 补充
-                                  │   └── ...
-                                  ├── 线性代数/
-                                  └── _索引.md
+🎤 录音文件 (MP3/WAV)
+    ↓
+🗣️ OpenAI Whisper 自动语音识别 (ASR)
+    ↓
+🤖 LLM 润色 + 摘要 + 知识点提取
+    ↓
+📓 Obsidian Markdown (含 Wikilink、LaTeX 公式)
 ```
 
-## 依赖
-
-- Python 3.11+
-- ffmpeg
-- [NoteKing Pro](https://github.com/bcefghj/noteking-pro)（自动安装 faster-whisper、openai 等）
-- LLM API Key（DeepSeek / OpenAI / MiniMax）
+---
 
 ## 安装
 
 ```bash
-# 1. 克隆 NoteKing Pro 并安装
-git clone https://github.com/bcefghj/noteking-pro.git
-cd noteking-pro
-python3 -m venv venv
-source venv/bin/activate
-pip install -e ".[meeting,asr]"
-pip install uvicorn fastapi python-multipart aiofiles
+# 1. 克隆仓库
+git clone https://github.com/zack59309-maker/lecture-note.git
+cd lecture-note
 
-# 2. 配置 LLM API
-python -m cli setup --api-key "sk-xxx" --base-url "https://api.deepseek.com" --model "deepseek-chat"
+# 2. 安装 Python 依赖
+pip install -r requirements.txt
 
-# 3. 把本仓库的脚本放到项目目录
-cp lecture-note.sh enrich-note.sh ./
-chmod +x lecture-note.sh enrich-note.sh
+# 3. 安装 ffmpeg (音频处理依赖)
+# Windows: winget install ffmpeg  或  scoop install ffmpeg
+# macOS:   brew install ffmpeg
+# Linux:   sudo apt install ffmpeg
+
+# 4. 配置 LLM API Key
+export OPENAI_API_KEY="sk-xxx"    # 用于 LLM 整理
 ```
+
+---
 
 ## 使用
 
 ```bash
-# 自动处理最新录音（自动识别学科）
-./lecture-note.sh
+# 转录单条录音并整理
+./lecture-note.sh ~/录音/高等代数_第六章.mp3
 
-# 指定文件+学科
-./lecture-note.sh ~/temp/lecture.mp3 "复变函数"
+# 批量处理整个文件夹（自动跳过已处理文件）
+./lecture-note.sh ~/录音/
 
-# 只指定学科（自动选最新文件）
-./lecture-note.sh "" "复变函数"
+# 仅转录（不调用 LLM 整理）
+./lecture-note.sh --transcribe-only ~/录音/复变函数.mp3
+
+# 对已有笔记进行二次润色
+./enrich-note.sh ~/笔记/高等代数/第六章.md
 ```
 
-不传学科时自动用 LLM 识别课堂内容所属学科。
+---
 
-## 知识补充
+## 输出示例
 
-`enrich-note.sh` 可单独使用，分析笔记中讲得浅/缺失的知识点并补充：
+转录 + 整理后生成以下结构到 Obsidian：
 
-```bash
-# 补充最新笔记
-./enrich-note.sh --auto
+```markdown
+# 高等代数 — 第六章 特征值与特征向量
 
-# 补充指定笔记
-./enrich-note.sh "课程笔记/复变函数/2026-06-04_xxx.md"
+## 录音摘要
+本节课讲解了特征值与特征向量的定义、计算方法及几何意义...
+
+## 知识点清单
+1. **特征值**：满足 Av = λv 的标量 λ
+2. **特征向量**：满足 Av = λv 的非零向量 v
+3. **特征多项式**：det(A - λI) = 0
+
+## 笔记正文
+（完整转录+润色后的课堂笔记）
+
+## 待办
+- [ ] 完成第六章习题 1-5
+- [ ] 复习相似对角化条件
 ```
 
-补充的内容以「📖 知识补充」区块追加到笔记末尾，包含定义、要点和例子。重复运行同篇笔记会替换旧内容，不重复累积。
+---
 
-## 配置
+## 文件说明
 
-编辑 `lecture-note.sh` 顶部的变量：
+| 文件 | 用途 |
+|------|------|
+| `lecture-note.sh` | 主入口脚本：转录 + LLM 整理 + 输出全流程 |
+| `enrich-note.sh` | 对已有笔记进行润色和结构化增强 |
+| `detect_subject.py` | 根据录音内容自动识别课程科目并分类 |
+| `skill` | 与 Hermes Agent 的 skill 集成配置 |
 
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `OBSIDIAN_VAULT` | `/mnt/d/obsidian/zack的数学知识库` | Obsidian 仓库路径 |
-| `TEMP_DOWNLOAD` | `/mnt/c/Users/10181/Desktop/课程录音` | 录音来源文件夹 |
+---
 
-## 作为 Hermes Skill 使用
+## 依赖
 
-`skill/lecture-note.md` 和 `skill/enrich-note.md` 可导入 Hermes Agent。之后在 CLI 或 QQ 上说：
-- "整理录音" — 全流程：转录 → 笔记 → 补充
-- "补充笔记" — 仅补充最新笔记的知识点
+- `openai-whisper` — 语音识别（支持多语言，含中文）
+- `torch` — PyTorch 推理加速
+- `ffmpeg` — 音频格式转换
+- Python 3.9+
+- LLM API (OpenAI-compatible)
 
-## 许可证
+---
 
-MIT
+## 输出路径
+
+默认输出到 Obsidian vault（需配置 `OBSIDIAN_VAULT` 环境变量），按课程分类：
+
+```
+Your Obsidian/
+├── 高等代数/
+│   ├── 01-线性方程组.md
+│   ├── 02-矩阵运算.md
+│   └── ...
+├── 复变函数/
+├── 数学建模/
+└── ...
+```
+
+---
+
+## License
+
+MIT © 2024 zack59309-maker
